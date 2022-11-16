@@ -63,7 +63,7 @@ app.use(async (req, res, next) => {
     res.sendStatus(403);
   }
 });
-// custom middleware for authorisation
+// custom middleware for authorization
 // app.use(async (req, res, next) => {
 //   const authRoles = ["StallHolder", "admin"];
 //   const user = await User.findOne({ authRoles.includes(req.body.role) : req.body.role });
