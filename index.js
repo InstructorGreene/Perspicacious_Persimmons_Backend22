@@ -7,6 +7,8 @@ const helmet = require("helmet");
 const morgan = require("morgan");
 const { ObjectId } = require("mongodb");
 const mongoose = require("mongoose");
+const { v4: uuidv4 } = require("uuid");
+
 const port = process.env.PORT;
 const dburi = process.env.DBURI;
 
@@ -30,20 +32,7 @@ app.use(cors());
 // adding morgan to log HTTP requests
 app.use(morgan("combined"));
 
-// // userName
-// app.get("/user", async (req, res) => {
-//   res.send(await User.find());
-// });
-
-// app.post("/user", async (req, res) => {
-//   const newUser = req.body;
-//   const user = new user(newUser);
-
-//   console.log("adding", user, req.body);
-//   await user.save();
-//   res.send({ message: "New user inserted." });
-// });
-
+// Auth login function
 app.post("/auth", async (req, res) => {
   const user = await User.findOne({ userEmail: req.body.userEmail });
   if (!user) {
@@ -52,21 +41,45 @@ app.post("/auth", async (req, res) => {
   if (req.body.password !== user.password) {
     return res.sendStatus(403);
   }
-  res.send({
-    token: "secretString",
-  });
+  user.token = uuidv4();
+  await user.save();
+  res.send({ token: user.token });
 });
 
-// custom middleware for authorisation
-app.use((req, res, next) => {
-  console.log(req.headers);
-  if (req.headers.authorization === "secretString") {
+//create user
+app.post("/user", async (req, res) => {
+  const newUser = req.body;
+  const user = new User(newUser);
+  await user.save();
+  res.send({ message: "New account created." });
+});
+
+// custom middleware for authentication
+app.use(async (req, res, next) => {
+  const user = await User.findOne({ token: req.headers.authorization });
+  if (user) {
     next();
   } else {
     res.sendStatus(403);
   }
 });
+// custom middleware for authorisation
+// app.use(async (req, res, next) => {
+//   const authRoles = ["StallHolder", "admin"];
+//   const user = await User.findOne({ authRoles.includes(req.body.role) : req.body.role });
+//   if (user) {
+//     next();
+//   } else {
+//     res.sendStatus(403);
+//   }
+// });
 
+//get user by id
+app.get("/user/:id", async (req, res) => {
+  await User.find({ _id: req.params.id }, (error, data) => {
+    res.send(data);
+  });
+});
 // defining CRUD operations for Bookings
 app.get("/", async (req, res) => {
   res.send(await Booking.find());
@@ -76,6 +89,15 @@ app.post("/", async (req, res) => {
   const newEvent = req.body;
   const event = new Booking(newEvent);
   await event.save();
+  try {
+    if (x == "") throw "empty";
+    if (isNaN(x)) throw "not a number";
+    x = Number(x);
+    if (x < 5) throw "too low";
+    if (x > 10) throw "too high";
+  } catch (err) {
+    message.innerHTML = "Input is " + err;
+  }
   res.send({ message: "New event inserted." });
 });
 
@@ -85,7 +107,6 @@ app.delete("/:id", async (req, res) => {
 });
 
 app.put("/:id", async (req, res) => {
-  console.log("updating", req.body, req.params.id);
   await Booking.findOneAndUpdate({ _id: ObjectId(req.params.id) }, req.body);
   res.send({ message: "Booking updated." });
 });
