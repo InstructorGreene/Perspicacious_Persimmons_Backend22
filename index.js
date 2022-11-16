@@ -30,8 +30,22 @@ app.use(cors());
 // adding morgan to log HTTP requests
 app.use(morgan("combined"));
 
+// // userName
+// app.get("/user", async (req, res) => {
+//   res.send(await User.find());
+// });
+
+// app.post("/user", async (req, res) => {
+//   const newUser = req.body;
+//   const user = new user(newUser);
+
+//   console.log("adding", user, req.body);
+//   await user.save();
+//   res.send({ message: "New user inserted." });
+// });
+
 app.post("/auth", async (req, res) => {
-  const user = await User.findOne({ userName: req.body.userName });
+  const user = await User.findOne({ userEmail: req.body.userEmail });
   if (!user) {
     return res.sendStatus(401);
   }
@@ -76,20 +90,7 @@ app.put("/:id", async (req, res) => {
   res.send({ message: "Booking updated." });
 });
 
-// userName
-app.get("/user", async (req, res) => {
-  res.send(await User.find());
-});
-
-app.post("/user", async (req, res) => {
-  const newUser = req.body;
-  const user = new user(newUser);
-
-  console.log("adding", user, req.body);
-  await user.save();
-  res.send({ message: "New user inserted." });
-});
-
+//
 // starting the server
 app.listen(port, () => {
   console.log(`listening on port ${port}`);
