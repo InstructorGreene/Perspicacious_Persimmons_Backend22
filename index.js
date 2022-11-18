@@ -34,7 +34,7 @@ app.use(morgan("combined"));
 
 // Auth login function
 app.post("/auth", async (req, res) => {
-  const user = await User.findOne({ userEmail: req.body.userEmail });
+  const user = await User.findOne({ email: req.body.email });
   if (!user) {
     return res.sendStatus(401);
   }
