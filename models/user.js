@@ -23,6 +23,12 @@ const userSchema = mongoose.Schema(
       required: true,
       lowercase: true,
     },
+    mobileNumber: {
+      type: Number,
+      required: true,
+      minLength: [11, "Telephone number is too short!"],
+      maxLength: [12, "Telephone number is too short!"],
+    },
     password: {
       type: String,
       required: true,
