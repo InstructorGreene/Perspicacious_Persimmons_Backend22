@@ -154,6 +154,12 @@ app.use(
 // adding morgan to log HTTP requests
 app.use(morgan("combined"));
 
+//get user by email
+app.get("/user/:email", async (req, res) => {
+  console.log(await User.findOne({ email: req.params.email }));
+  res.send(await User.find({ email: req.params.email }));
+});
+
 //create user
 app.post("/user", async (req, res) => {
   const newUser = req.body;
@@ -189,13 +195,6 @@ app.use(async (req, res, next) => {
   } else {
     res.sendStatus(403);
   }
-});
-
-//get user by id
-app.get("/user/:id", async (req, res) => {
-  await User.find({ _id: req.params.id }, (error, data) => {
-    res.send(data);
-  });
 });
 
 //all users may view bookings, but with different filters
