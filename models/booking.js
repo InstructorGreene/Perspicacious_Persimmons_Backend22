@@ -5,11 +5,12 @@ let bookingSchema = new Schema(
     businessName: String,
     stallType: String,
     comments: String,
-    status: String,
+    status: { type: String, default: "created" },
     date: {
       type: Date,
       default: Date.now,
     },
+    userId: String,
   },
   { collection: "bookings" }
 );

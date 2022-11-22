@@ -33,8 +33,8 @@ const userSchema = mongoose.Schema(
       type: String,
       required: true,
     },
-    role: String,
-    token: String,
+    role: { type: String, default: "StallHolder" },
+    token: { type: String, default: "" },
   },
   { collection: "user" }
 );

@@ -176,6 +176,7 @@ app.post("/auth", async (req, res) => {
   res.send({
     token: user.token,
     role: user.role,
+    userId: user._id,
   });
 });
 
@@ -205,7 +206,7 @@ app.get("/", async (req, res) => {
 // custom middleware for StallHolder or Admin authorization
 app.use(async (req, res, next) => {
   const user = await User.findOne({ token: req.headers.authorization });
-  console.log(user.role);
+  console.log(user.role, user._id);
   if (user.role === "StallHolder" || user.role === "admin") {
     next();
   } else {
