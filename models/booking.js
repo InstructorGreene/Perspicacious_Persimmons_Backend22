@@ -10,7 +10,7 @@ let bookingSchema = new Schema(
       type: Date,
       default: Date.now,
     },
-    userId: String,
+    userid: String,
   },
   { collection: "bookings" }
 );

@@ -156,7 +156,6 @@ app.use(morgan("combined"));
 
 //get user by email
 app.get("/user/:email", async (req, res) => {
-  console.log(await User.findOne({ email: req.params.email }));
   res.send(await User.find({ email: req.params.email }));
 });
 
@@ -182,7 +181,7 @@ app.post("/auth", async (req, res) => {
   res.send({
     token: user.token,
     role: user.role,
-    userId: user._id,
+    userid: user._id,
   });
 });
 
@@ -213,12 +212,17 @@ app.use(async (req, res, next) => {
   }
 });
 
+//get booking by userId
+app.get("/:userid", async (req, res) => {
+  res.send(await Booking.find({ userid: req.params.userid }));
+});
+
 // add Bookings
 app.post("/", async (req, res) => {
-  const newEvent = req.body;
-  const event = new Booking(newEvent);
-  await event.save();
-  res.send({ message: "New event inserted." });
+  const newBooking = req.body;
+  const booking = new Booking(newBooking);
+  await booking.save();
+  res.send({ message: "New booking created." });
 });
 
 //edit Booking
