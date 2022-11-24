@@ -154,19 +154,9 @@ app.use(
 // adding morgan to log HTTP requests
 app.use(morgan("combined"));
 
-// Auth login function
-app.post("/auth", async (req, res) => {
-
-  const user = await User.findOne({ email: req.body.email });
-  if (!user) {
-    return res.sendStatus(401);
-  }
-  if (req.body.password !== user.password) {
-    return res.sendStatus(403);
-  }
-  user.token = uuidv4();
-  await user.save();
-  res.send({ token: user.token });
+//get user by email
+app.get("/user/:email", async (req, res) => {
+  res.send(await User.find({ email: req.params.email }));
 });
 
 //create user
@@ -177,7 +167,26 @@ app.post("/user", async (req, res) => {
   res.send({ message: "New account created." });
 });
 
+// Auth login function
+app.post("/auth", async (req, res) => {
+  const user = await User.findOne({ email: req.body.email });
+  if (!user) {
+    return res.sendStatus(401);
+  }
+  if (req.body.password !== user.password) {
+    return res.sendStatus(403);
+  }
+  user.token = uuidv4();
+  await user.save();
+  res.send({
+    token: user.token,
+    role: user.role,
+    userid: user._id,
+  });
+});
+
 // custom middleware for authentication
+// there is a user in the db, that matches the req header token
 app.use(async (req, res, next) => {
   const user = await User.findOne({ token: req.headers.authorization });
   if (user) {
@@ -186,46 +195,58 @@ app.use(async (req, res, next) => {
     res.sendStatus(403);
   }
 });
-// custom middleware for authorization
-// app.use(async (req, res, next) => {
-//   const authRoles = ["StallHolder", "admin"];
-//   const user = await User.findOne({ authRoles.includes(req.body.role) : req.body.role });
-//   if (user) {
-//     next();
-//   } else {
-//     res.sendStatus(403);
-//   }
-// });
 
-//get user by id
-app.get("/user/:id", async (req, res) => {
-  await User.find({ _id: req.params.id }, (error, data) => {
-    res.send(data);
-  });
-});
-// defining CRUD operations for Bookings
+//all users may view bookings, but with different filters
 app.get("/", async (req, res) => {
   res.send(await Booking.find());
 });
 
+// custom middleware for StallHolder or Admin authorization
+app.use(async (req, res, next) => {
+  const user = await User.findOne({ token: req.headers.authorization });
+  console.log(user.role, user._id);
+  if (user.role === "StallHolder" || user.role === "admin") {
+    next();
+  } else {
+    return res.sendStatus(401);
+  }
+});
+
+//get booking by userId
+app.get("/:userid", async (req, res) => {
+  res.send(await Booking.find({ userid: req.params.userid }));
+});
+
+// add Bookings
 app.post("/", async (req, res) => {
-  const newEvent = req.body;
-  const event = new Booking(newEvent);
-  await event.save();
-  res.send({ message: "New event inserted." });
+  const newBooking = req.body;
+  const booking = new Booking(newBooking);
+  await booking.save();
+  res.send({ message: "New booking created." });
 });
 
-app.delete("/:id", async (req, res) => {
-  await Booking.deleteOne({ _id: ObjectId(req.params.id) });
-  res.send({ message: "Booking removed." });
-});
-
+//edit Booking
 app.put("/:id", async (req, res) => {
   await Booking.findOneAndUpdate({ _id: ObjectId(req.params.id) }, req.body);
   res.send({ message: "Booking updated." });
 });
 
-//
+// custom middleware for admin authorization
+app.use(async (req, res, next) => {
+  const user = await User.findOne({ token: req.headers.authorization });
+  if (user.role === "admin") {
+    next();
+  } else {
+    return res.sendStatus(401);
+  }
+});
+
+//Delete Booking
+app.delete("/:id", async (req, res) => {
+  await Booking.deleteOne({ _id: ObjectId(req.params.id) });
+  res.send({ message: "Booking removed." });
+});
+
 // starting the server
 app.listen(port, () => {
   console.log(`listening on port ${port}`);
