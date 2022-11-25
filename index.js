@@ -42,6 +42,11 @@ app.get("/user/:email", async (req, res) => {
   res.send(await User.find({ email: req.params.email }));
 });
 
+//get user by id
+app.get("/userId/:id", async (req, res) => {
+  res.send(await User.findOne({ _id: req.params.id }));
+});
+
 //create user
 app.post("/user", async (req, res) => {
   const newUser = req.body;
@@ -87,6 +92,7 @@ app.get("/", async (req, res) => {
 // custom middleware for StallHolder or Admin authorization
 app.use(async (req, res, next) => {
   const user = await User.findOne({ token: req.headers.authorization });
+  console.log(user.role, user._id);
   if (user.role === "StallHolder" || user.role === "admin") {
     next();
   } else {
@@ -97,7 +103,6 @@ app.use(async (req, res, next) => {
 //get booking by userId
 app.get("/:userid", async (req, res) => {
   res.send(await Booking.find({ userid: req.params.userid }));
-  console.log(req);
 });
 
 // add Bookings
