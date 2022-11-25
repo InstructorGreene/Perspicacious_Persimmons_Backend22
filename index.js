@@ -97,7 +97,6 @@ app.use(async (req, res, next) => {
 //get booking by userId
 app.get("/:userid", async (req, res) => {
   res.send(await Booking.find({ userid: req.params.userid }));
-  console.log(req);
 });
 
 // add Bookings
