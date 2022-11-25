@@ -243,8 +243,14 @@ app.use(async (req, res, next) => {
 
 //Delete Booking
 app.delete("/:id", async (req, res) => {
-  await Booking.deleteOne({ _id: ObjectId(req.params.id) });
-  res.send({ message: "Booking removed." });
+  //added these codes to delete the
+  // booking anly if it is an admin
+  const user = await User.findOne({ token: req.headers.authorization });
+  console.log(user.role, user._id);
+  if (user.role === "admin") {
+    await Booking.deleteOne({ _id: ObjectId(req.params.id) });
+    res.send({ message: "Booking removed." });
+  }
 });
 
 // starting the server
