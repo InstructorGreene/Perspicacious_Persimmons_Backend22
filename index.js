@@ -89,7 +89,6 @@ app.get("/", async (req, res) => {
   let ids = await Promise.all(
     bookings.map(async (post) => {
       const postUser = await User.findOne({ _id: post.userid });
-
       return {
         firstName: postUser.firstName,
         lastName: postUser.lastName,
@@ -99,10 +98,7 @@ app.get("/", async (req, res) => {
       };
     })
   );
-
   res.send(ids);
-
-  // res.send(await Booking.find());
 });
 
 // custom middleware for StallHolder or Admin authorization
@@ -117,7 +113,20 @@ app.use(async (req, res, next) => {
 
 //get booking by userId
 app.get("/:userid", async (req, res) => {
-  res.send(await Booking.find({ userid: req.params.userid }));
+  let bookings = await Booking.find({ userid: req.params.userid });
+  let ids = await Promise.all(
+    bookings.map(async (post) => {
+      const postUser = await User.findOne({ _id: post.userid });
+      return {
+        firstName: postUser.firstName,
+        lastName: postUser.lastName,
+        email: postUser.email,
+        mobileNumber: postUser.mobileNumber,
+        ...post.toObject(),
+      };
+    })
+  );
+  res.send(ids);
 });
 
 // add Bookings
