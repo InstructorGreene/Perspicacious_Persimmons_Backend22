@@ -41,6 +41,10 @@ app.use(morgan("combined"));
 app.get("/user/:email", async (req, res) => {
   res.send(await User.find({ email: req.params.email }));
 });
+//get user by id
+app.get("/userId/:id", async (req, res) => {
+  res.send(await User.findOne({ _id: req.params.id }));
+});
 
 //create user
 app.post("/user", async (req, res) => {
@@ -79,9 +83,26 @@ app.use(async (req, res, next) => {
   }
 });
 
-//all users may view bookings, but with different filters
+//concatenation of booking collection and user collection
 app.get("/", async (req, res) => {
-  res.send(await Booking.find());
+  let bookings = await Booking.find();
+  let ids = await Promise.all(
+    bookings.map(async (post) => {
+      const postUser = await User.findOne({ _id: post.userid });
+
+      return {
+        firstName: postUser.firstName,
+        lastName: postUser.lastName,
+        email: postUser.email,
+        mobileNumber: postUser.mobileNumber,
+        ...post.toObject(),
+      };
+    })
+  );
+
+  res.send(ids);
+
+  // res.send(await Booking.find());
 });
 
 // custom middleware for StallHolder or Admin authorization
@@ -110,6 +131,16 @@ app.post("/", async (req, res) => {
 //edit Booking
 app.put("/:id", async (req, res) => {
   await Booking.findOneAndUpdate({ _id: ObjectId(req.params.id) }, req.body);
+  res.send({ message: "Booking updated." });
+});
+
+//edit Booking status
+app.put("/bstatus/:id", async (req, res) => {
+  await Booking.findOneAndUpdate(
+    { _id: ObjectId(req.params.id) },
+    req.body.bstatus,
+    console.log(req.body.bstatus, res)
+  );
   res.send({ message: "Booking updated." });
 });
 
