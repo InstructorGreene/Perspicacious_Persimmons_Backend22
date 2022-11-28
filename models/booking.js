@@ -5,7 +5,8 @@ let bookingSchema = new Schema(
     businessName: String,
     stallType: String,
     comments: String,
-    status: { type: String, default: "created" },
+    bstatus: { type: String, default: "created" },
+    pitch: { type: Number, default: "000" },
     date: {
       type: Date,
       default: Date.now,
