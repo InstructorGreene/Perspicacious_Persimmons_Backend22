@@ -90,11 +90,11 @@ app.use(async (req, res, next) => {
 
 //concatenation of booking collection and user collection
 app.get("/", async (req, res) => {
+  console.log("arriving");
   let bookings = await Booking.find();
   let ids = await Promise.all(
     bookings.map(async (post) => {
       const postUser = await User.findOne({ _id: post.userid });
-
       return {
         firstName: postUser.firstName,
         lastName: postUser.lastName,
@@ -104,10 +104,16 @@ app.get("/", async (req, res) => {
       };
     })
   );
-
+  console.log(ids);
   res.send(ids);
-
-  // res.send(await Booking.find());
+});
+//edit Booking status
+app.post("/s/:id", async (req, res) => {
+  await Booking.findOneAndUpdate(
+    { _id: ObjectId(req.params.id) },
+    { bstatus: req.body.bstatus }
+  );
+  res.send({ message: "Booking status updated." });
 });
 
 // custom middleware for StallHolder or Admin authorization
@@ -123,7 +129,20 @@ app.use(async (req, res, next) => {
 
 //get booking by userId
 app.get("/:userid", async (req, res) => {
-  res.send(await Booking.find({ userid: req.params.userid }));
+  let bookings = await Booking.find({ userid: req.params.userid });
+  let ids = await Promise.all(
+    bookings.map(async (post) => {
+      const postUser = await User.findOne({ _id: post.userid });
+      return {
+        firstName: postUser.firstName,
+        lastName: postUser.lastName,
+        email: postUser.email,
+        mobileNumber: postUser.mobileNumber,
+        ...post.toObject(),
+      };
+    })
+  );
+  res.send(ids);
 });
 
 // add Bookings
@@ -137,16 +156,6 @@ app.post("/", async (req, res) => {
 //edit Booking
 app.put("/:id", async (req, res) => {
   await Booking.findOneAndUpdate({ _id: ObjectId(req.params.id) }, req.body);
-  res.send({ message: "Booking updated." });
-});
-
-//edit Booking status
-app.put("/bstatus/:id", async (req, res) => {
-  await Booking.findOneAndUpdate(
-    { _id: ObjectId(req.params.id) },
-    req.body.bstatus,
-    console.log(req.body.bstatus, res)
-  );
   res.send({ message: "Booking updated." });
 });
 
