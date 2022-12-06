@@ -95,7 +95,6 @@ app.use(async (req, res, next) => {
 
 //concatenation of booking collection and user collection
 app.get("/", async (req, res) => {
-  console.log("arriving");
   let bookings = await Booking.find();
   let ids = await Promise.all(
     bookings.map(async (post) => {
