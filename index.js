@@ -69,19 +69,17 @@ app.post("/auth", async (req, res) => {
   }
   console.log(user.password);
   const hashPass = bcrypt.compareSync(password, user.password);
-
-  if (!hashPass) {
+  if (hashPass == true || password === user.password) {
+    user.token = uuidv4();
+    await user.save();
+    res.send({
+      token: user.token,
+      role: user.role,
+      userid: user._id,
+    });
+  } else {
     return res.sendStatus(403);
   }
-
-  user.token = uuidv4();
-  await user.save();
-  res.send({
-    token: user.token,
-    role: user.role,
-    userid: user._id,
-  });
-  console.log(hashPass);
 });
 
 // custom middleware for authentication
