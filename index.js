@@ -97,6 +97,7 @@ app.use(async (req, res, next) => {
 
 //concatenation of booking collection and user collection
 app.get("/", async (req, res) => {
+  console.log("arriving");
   let bookings = await Booking.find();
   let ids = await Promise.all(
     bookings.map(async (post) => {
@@ -110,6 +111,7 @@ app.get("/", async (req, res) => {
       };
     })
   );
+
   res.send(ids);
 });
 
@@ -123,6 +125,7 @@ app.post("/updatePost/:id", async (req, res) => {
   await booking.save();
   res.send({ message: "success", upsert: booking });
 });
+
 
 //edit Booking status
 app.post("/s/:id", async (req, res) => {
