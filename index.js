@@ -8,6 +8,7 @@ const morgan = require("morgan");
 const { ObjectId } = require("mongodb");
 const mongoose = require("mongoose");
 const { v4: uuidv4 } = require("uuid");
+const bcrypt = require("bcrypt");
 
 const port = process.env.PORT;
 const dburi = process.env.DBURI;
@@ -39,11 +40,7 @@ app.use(morgan("combined"));
 
 //get user by email
 app.get("/user/:email", async (req, res) => {
-  res.send(await User.find({ email: req.params.email }));
-});
-//get user by id
-app.get("/userId/:id", async (req, res) => {
-  res.send(await User.findOne({ _id: req.params.id }));
+  res.send(await User.findOne({ email: req.params.email }));
 });
 
 //get user by id
@@ -55,19 +52,28 @@ app.get("/userId/:id", async (req, res) => {
 app.post("/user", async (req, res) => {
   const newUser = req.body;
   const user = new User(newUser);
+  const hash = bcrypt.hashSync(user.password, 10);
+  console.log(hash);
+  user.password = hash;
   await user.save();
   res.send({ message: "New account created." });
+  console.log(hash);
 });
 
 // Auth login function
 app.post("/auth", async (req, res) => {
-  const user = await User.findOne({ email: req.body.email });
+  const { email, password } = req.body;
+  const user = await User.findOne({ email: email });
   if (!user) {
     return res.sendStatus(401);
   }
-  if (req.body.password !== user.password) {
+  console.log(user.password);
+  const hashPass = bcrypt.compareSync(password, user.password);
+
+  if (!hashPass) {
     return res.sendStatus(403);
   }
+
   user.token = uuidv4();
   await user.save();
   res.send({
@@ -75,6 +81,7 @@ app.post("/auth", async (req, res) => {
     role: user.role,
     userid: user._id,
   });
+  console.log(hashPass);
 });
 
 // custom middleware for authentication
@@ -94,7 +101,6 @@ app.get("/", async (req, res) => {
   let ids = await Promise.all(
     bookings.map(async (post) => {
       const postUser = await User.findOne({ _id: post.userid });
-
       return {
         firstName: postUser.firstName,
         lastName: postUser.lastName,
@@ -104,16 +110,32 @@ app.get("/", async (req, res) => {
       };
     })
   );
-
   res.send(ids);
+});
 
-  // res.send(await Booking.find());
+//edit Booking
+app.post("/updatePost/:id", async (req, res) => {
+  const booking = await Booking.findOne({ _id: ObjectId(req.params.id) });
+  const { businessName, stallType, comments } = req.body;
+  booking.businessName = businessName;
+  booking.stallType = stallType;
+  booking.comments = comments;
+  await booking.save();
+  res.send({ message: "success", upsert: booking });
+});
+
+//edit Booking status
+app.post("/s/:id", async (req, res) => {
+  await Booking.findOneAndUpdate(
+    { _id: ObjectId(req.params.id) },
+    { bstatus: req.body.bstatus }
+  );
+  res.send({ message: "Booking status updated." });
 });
 
 // custom middleware for StallHolder or Admin authorization
 app.use(async (req, res, next) => {
   const user = await User.findOne({ token: req.headers.authorization });
-  console.log(user.role, user._id);
   if (user.role === "StallHolder" || user.role === "admin") {
     next();
   } else {
@@ -123,7 +145,20 @@ app.use(async (req, res, next) => {
 
 //get booking by userId
 app.get("/:userid", async (req, res) => {
-  res.send(await Booking.find({ userid: req.params.userid }));
+  let bookings = await Booking.find({ userid: req.params.userid });
+  let ids = await Promise.all(
+    bookings.map(async (post) => {
+      const postUser = await User.findOne({ _id: post.userid });
+      return {
+        firstName: postUser.firstName,
+        lastName: postUser.lastName,
+        email: postUser.email,
+        mobileNumber: postUser.mobileNumber,
+        ...post.toObject(),
+      };
+    })
+  );
+  res.send(ids);
 });
 
 // add Bookings
@@ -140,16 +175,6 @@ app.put("/:id", async (req, res) => {
   res.send({ message: "Booking updated." });
 });
 
-//edit Booking status
-app.put("/bstatus/:id", async (req, res) => {
-  await Booking.findOneAndUpdate(
-    { _id: ObjectId(req.params.id) },
-    req.body.bstatus,
-    console.log(req.body.bstatus, res)
-  );
-  res.send({ message: "Booking updated." });
-});
-
 // custom middleware for admin authorization
 app.use(async (req, res, next) => {
   const user = await User.findOne({ token: req.headers.authorization });
@@ -162,14 +187,8 @@ app.use(async (req, res, next) => {
 
 //Delete Booking
 app.delete("/:id", async (req, res) => {
-  //added these codes to delete the
-  // booking anly if it is an admin
-  const user = await User.findOne({ token: req.headers.authorization });
-  console.log(user.role, user._id);
-  if (user.role === "admin") {
-    await Booking.deleteOne({ _id: ObjectId(req.params.id) });
-    res.send({ message: "Booking removed." });
-  }
+  await Booking.deleteOne({ _id: ObjectId(req.params.id) });
+  res.send({ message: "Booking removed." });
 });
 
 // starting the server
