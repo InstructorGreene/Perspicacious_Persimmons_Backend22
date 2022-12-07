@@ -95,7 +95,6 @@ app.use(async (req, res, next) => {
 
 //concatenation of booking collection and user collection
 app.get("/", async (req, res) => {
-  console.log("arriving");
   let bookings = await Booking.find();
   let ids = await Promise.all(
     bookings.map(async (post) => {
@@ -124,7 +123,6 @@ app.post("/updatePost/:id", async (req, res) => {
   res.send({ message: "success", upsert: booking });
 });
 
-
 //edit Booking status
 app.post("/s/:id", async (req, res) => {
   await Booking.findOneAndUpdate(
@@ -132,6 +130,14 @@ app.post("/s/:id", async (req, res) => {
     { bstatus: req.body.bstatus }
   );
   res.send({ message: "Booking status updated." });
+});
+//edit pitch number
+app.post("/p/:id", async (req, res) => {
+  await Booking.findOneAndUpdate(
+    { _id: ObjectId(req.params.id) },
+    { pitch: req.body.pitch }
+  );
+  res.send({ message: "Pitch number updated." });
 });
 
 // custom middleware for StallHolder or Admin authorization
